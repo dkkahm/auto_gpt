@@ -1,4 +1,4 @@
-use crate::models::general::llm::{Message, ChatCompletion, APIResponse};
+use crate::models::general::llm::{APIResponse, ChatCompletion, Message};
 use dotenv::dotenv;
 use reqwest::Client;
 use std::env;
@@ -21,16 +21,16 @@ pub async fn call_gpt(messages: Vec<Message>) -> Result<String, Box<dyn std::err
 
     // Create api key header
     headers.insert(
-        "Authorization", 
+        "Authorization",
         HeaderValue::from_str(&format!("Bearer {}", api_key))
-        .map_err(|e| -> Box<dyn std::error::Error + Send> { Box::new(e) })?
+            .map_err(|e| -> Box<dyn std::error::Error + Send> { Box::new(e) })?,
     );
 
     // Create Open AI Org header
     headers.insert(
-        "OpenAI-Organization", 
+        "OpenAI-Organization",
         HeaderValue::from_str(api_org.as_str())
-        .map_err(|e| -> Box<dyn std::error::Error + Send> { Box::new(e) })?
+            .map_err(|e| -> Box<dyn std::error::Error + Send> { Box::new(e) })?,
     );
 
     // Create client
@@ -79,12 +79,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_call_gpt() {
-        let messages = vec![
-            Message {
-                role: "user".to_string(),
-                content: "Hi there, this is a test. Give me a short response".to_string(),
-            },
-        ];
+        let messages = vec![Message {
+            role: "user".to_string(),
+            content: "Hi there, this is a test. Give me a short response".to_string(),
+        }];
 
         let response = call_gpt(messages).await;
         match response {
@@ -96,6 +94,5 @@ mod tests {
                 assert!(false);
             }
         }
-
     }
 }

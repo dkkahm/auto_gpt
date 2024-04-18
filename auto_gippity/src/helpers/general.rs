@@ -2,29 +2,35 @@ use reqwest::Client;
 use serde::Deserialize;
 
 use crate::apis::call_request::call_gpt;
-use crate::models::general::llm::Message;
 use crate::helpers::command_line::PrintCommand;
+use crate::models::general::llm::Message;
 use serde::de::DeserializeOwned;
 
-const CODE_TEMPLACE_PATH: &str = "/Users/dkkam/Projects/study/study-rust/auto_gpt/webtemplate/src/code_templace.rs";
-const EXEC_MAIN_PATH: &str = "/Users/dkkam/Projects/study/study-rust/auto_gpt/webtemplate/src/main.rs";
-const API_SCHEMA_PATH: &str = "/Users/dkkam/Projects/study/study-rust/auto_gpt/auto_gippity/src/schemas/api_schema.json";
+const CODE_TEMPLACE_PATH: &str =
+    "/Users/dkkam/Projects/study/study-rust/auto_gpt/webtemplate/src/code_templace.rs";
+pub const WEB_SERVER_PROJECT_PATH: &str = "/Users/dkkam/Projects/study/study-rust/auto_gpt/webtemplate";
+const EXEC_MAIN_PATH: &str =
+    "/Users/dkkam/Projects/study/study-rust/auto_gpt/webtemplate/src/main.rs";
+const API_SCHEMA_PATH: &str =
+    "/Users/dkkam/Projects/study/study-rust/auto_gpt/auto_gippity/src/schemas/api_schema.json";
 
-pub fn extend_ai_function(ai_fun: fn(&str) ->&'static str, func_input: &str) -> Message {
+pub fn extend_ai_function(ai_fun: fn(&str) -> &'static str, func_input: &str) -> Message {
     let ai_function_str = ai_fun(func_input);
     // dbg!(ai_function_str);
 
     // Extend the string to encourage only printing output
-    let msg: String = format!("FUNCTION: {}
+    let msg: String = format!(
+        "FUNCTION: {}
     INSTRUCTION: You are a function printer. You ONLY print the results of functions.
     Nothing else. No commentary. Here is the input to the function {}.
     Print out what the function will return.",
-    ai_function_str, func_input);
+        ai_function_str, func_input
+    );
     // dbg!(msg);
 
     Message {
         role: "system".to_string(),
-        content: msg
+        content: msg,
     }
 }
 
@@ -47,11 +53,9 @@ pub async fn ai_task_request(
     // Handle Success
     match llm_response_res {
         Ok(llm_response) => llm_response,
-        Err(_) => {
-            call_gpt(vec![extended_msg.clone()])
-                .await
-                .expect("Failed to get LLM response")
-        }
+        Err(_) => call_gpt(vec![extended_msg.clone()])
+            .await
+            .expect("Failed to get LLM response"),
     }
 }
 
@@ -62,10 +66,11 @@ pub async fn ai_task_request_decoded<T: DeserializeOwned>(
     agent_operation: &str,
     function_pass: for<'a> fn(&'a str) -> &'static str,
 ) -> T {
-    let llm_response = ai_task_request(msg_context, agent_position, agent_operation, function_pass).await;
+    let llm_response =
+        ai_task_request(msg_context, agent_position, agent_operation, function_pass).await;
 
-    let decoded_response: T = serde_json::from_str(&llm_response)
-        .expect("Failed to decode LLM response");
+    let decoded_response: T =
+        serde_json::from_str(&llm_response).expect("Failed to decode LLM response");
 
     decoded_response
 }
@@ -79,6 +84,12 @@ pub async fn check_status_code(client: &Client, url: &str) -> Result<u16, reqwes
 // Get Code Templace
 pub fn read_code_template_contents() -> String {
     std::fs::read_to_string(CODE_TEMPLACE_PATH).expect("Failed to read code template")
+}
+
+// Get Exec Main
+pub fn read_exec_main_contents() -> String {
+    let path: String = String::from(EXEC_MAIN_PATH);
+    std::fs::read_to_string(path).expect("Failed to read code template")
 }
 
 // Save New backend code
@@ -113,7 +124,7 @@ mod tests {
             convert_user_input_to_goal,
         )
         .await;
-        
+
         assert!(res.len() > 20);
     }
 }
